@@ -10,6 +10,8 @@ private:
   size_t &alloc_num_;
   static const size_t ALLOC_MEM_;
   inline void free_variables() {
+    if (alloc_num_ != 1)
+      return;
     free(memory_);
     delete prev_alloc_;
     delete &allocated_memory_;
@@ -30,7 +32,7 @@ public:
       : allocated_memory_(*(new size_t)), memory_(*(new void *)),
         head_(*(new void *)), prev_alloc_(*(new StackAllocator *(nullptr))),
         alloc_num_(*(new size_t(1))) {
-    allocated_memory_ = std::max(2 * sizeof(T), static_cast<size_t>(100000));
+    allocated_memory_ = std::max(2 * sizeof(T), ALLOC_MEM_);
     memory_ = malloc(allocated_memory_);
     head_ = memory_;
   }
@@ -41,34 +43,30 @@ public:
         prev_alloc_(*(new StackAllocator *(prev_alloc_))),
         head_(*(new void *)),
         alloc_num_(*(new size_t(1))) {}
-  StackAllocator(const StackAllocator &other) noexcept : StackAllocator() {
-    *this = other;
+  StackAllocator(const StackAllocator &other) noexcept
+      : memory_(other.memory_),
+        allocated_memory_(other.allocated_memory_),
+        head_(other.head_),
+        prev_alloc_(other.prev_alloc_),
+        alloc_num_(other.alloc_num_) {
+    ++alloc_num_;
   }
-  StackAllocator &operator=(const StackAllocator &other) {
-    free_variables();
-    allocated_memory_ = other.allocated_memory_;
-    memory_ = other.memory_;
-    head_ = other.head_;
-    alloc_num_ = other.alloc_num_;
-    prev_alloc_ = other.prev_alloc_;
-    return *this;
-  }
+  StackAllocator &operator=(const StackAllocator &) = delete;
   pointer allocate(size_t num_) noexcept {
-    void *ans = static_cast<void *>(head_);
-    void *new_head = static_cast<void *>((char *)head_ + num_ * sizeof(T));
-    if ((char *)new_head > (char *)memory_ + allocated_memory_) {
+    void *ans = head_;
+    head_ = (char *)head_ + sizeof(T) * num_;
+    if ((char *)head_ > (char *)memory_ + allocated_memory_) {
       prev_alloc_ = new StackAllocator(memory_, allocated_memory_, prev_alloc_);
       memory_ = malloc(allocated_memory_);
-      new_head = static_cast<void *>((char *)memory_ + num_ * sizeof(T));
+      head_ = (char *)memory_ + num_ * sizeof(T);
       ans = memory_;
       /*memory_ = std::realloc(
               memory_, std::max(static_cast<size_t>(
-              2 * ((char *)new_head - (char *)memory_)),
+              2 * ((char *)head_ - (char *)memory_)),
               2 * allocated_memory_));
-              new_head = memory_ + ((char *)head_ - (char *)memory_) + num_ *
+              head_ = memory_ + ((char *)head_ - (char *)memory_) + num_ *
               sizeof(T);*/
     }
-    head_ = new_head;
     return static_cast<T *>(ans) /*- static_cast<T *>((void *)memory_)*/;
   }
   void construct(pointer p, const_reference val) noexcept {
@@ -87,5 +85,11 @@ public:
   }
   void deallocate(T *, size_t) noexcept {}
   ~StackAllocator() { free_variables(); }
+  bool operator==(const StackAllocator &other) const noexcept {
+    return memory_ == other.memory_;
+  }
+  bool operator!=(const StackAllocator &other) const noexcept {
+    return !operator==(other);
+  }
 };
 template <typename T> const size_t StackAllocator<T>::ALLOC_MEM_ = 100000;
