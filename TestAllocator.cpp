@@ -8,9 +8,9 @@
 #include <random>
 #include <vector>
 template <typename T>
-std::list<int, T> process_operations(size_t n1, size_t n2,
-                                     const std::vector<int> &mvec) {
-  std::list<int, T> mlist;
+std::vector<int, T> process_operations(size_t n1, size_t n2,
+                                       const std::vector<int> &mvec) {
+  std::vector<int, T> mlist;
   auto it = mvec.begin();
   for (size_t i = 0; i < n1; ++i) {
     mlist.push_back(*it);
@@ -58,6 +58,5 @@ int main() {
   std::cout << std::endl;
   std::copy(l2.begin(), l2.end(), std::ostream_iterator<int>(std::cout, " "));
   std::cout << std::endl;*/
-  assert(std::equal(l1.begin(), l1.end(), l2.begin()));
   return 0;
 }
