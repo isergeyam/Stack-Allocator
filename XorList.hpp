@@ -34,25 +34,15 @@ private:
 public:
   struct _XorList_node {
     using _Self = _XorList_node;
-    allocator_type &_M_alloc;
     pointer _M_data;
     node_pointer _M_xor;
-    _XorList_node(allocator_type &alloc, pointer _M_data = nullptr)
-        : _M_alloc(alloc), _M_data(_M_data), _M_xor(nullptr) {}
-    _XorList_node(allocator_type &alloc, const_reference __x)
-        : _M_alloc(alloc), _M_xor(nullptr) {
-      _M_data = alloc_traits::allocate(_M_alloc, 1);
-      alloc_traits::construct(_M_alloc, _M_data, __x);
-    }
+    _XorList_node(pointer _M_data = nullptr)
+        : _M_data(_M_data), _M_xor(nullptr) {}
     node_pointer _M_relative(node_pointer _rel) {
       return _M_process_xor(_M_xor, _rel);
     }
     void _M_recalc(node_pointer __p, node_pointer __n) {
       _M_xor = _M_process_xor(_M_xor, _M_process_xor(__p, __n));
-    }
-    ~_XorList_node() {
-      alloc_traits::destroy(_M_alloc, _M_data);
-      alloc_traits::deallocate(_M_alloc, _M_data, 1);
     }
   };
   struct _XorList_iterator
@@ -112,12 +102,14 @@ private:
   }
   template <typename... _Args> node_pointer _M_create_node(_Args &&... __args) {
     node_pointer __p = _M_get_node();
-    _Node_alloc_traits::construct(_M_node_allocator, __p, _M_allocator,
-                                  std::forward<_Args>(__args)...);
+    pointer __val = alloc_traits::allocate(_M_allocator, 1);
+    alloc_traits::construct(_M_allocator, __val,
+                            std::forward<_Args>(__args)...);
+    _Node_alloc_traits::construct(_M_node_allocator, __p, __val);
     return __p;
   }
   template <typename... _Args>
-  void _M_insert(iterator __position, _Args &&... __args) {
+  void _M_insert(iterator &__position, _Args &&... __args) {
     node_pointer __c1 = _M_create_node(std::forward<_Args>(__args)...);
     node_pointer &__p = __position._M_prev;
     node_pointer __c = __position._M_node;
@@ -128,22 +120,29 @@ private:
     //__c1->_M_xor = _M_process_xor(__c1->_M_xor, _M_process_xor(__p, __c));
     __c->_M_recalc(__p, __c1);
     //__c->_M_xor = _M_process_xor(__c->_M_xor, _M_process_xor(__p, __c1));
-    __p = __c1;
     if (__position == _M_begin) {
       _M_begin._M_prev = __c1;
       --_M_begin;
     }
+    __p = __c1;
     ++_M_size;
   }
   void _M_destroy() {
     while (!empty())
       pop_back();
+    _M_free_node(_M_end._M_node);
+  }
+  void _M_free_node(node_pointer __node) {
+    alloc_traits::destroy(_M_allocator, __node->_M_data);
+    alloc_traits::deallocate(_M_allocator, __node->_M_data, 1);
+    _Node_alloc_traits::destroy(_M_node_allocator, __node);
+    _Node_alloc_traits::deallocate(_M_node_allocator, __node, 1);
   }
 
 public:
   explicit XorList(const _Alloc &alloc = _Alloc())
       : _M_allocator(alloc), _M_size(0) {
-    _M_begin._M_node = *_M_begin._M_prev = _M_create_node();
+    _M_begin._M_node = _M_begin._M_prev = _M_create_node();
     _M_end = _M_begin;
   }
   void insert_before(iterator __position, const _Tp &__x) {
@@ -161,29 +160,30 @@ public:
     _M_insert(__position, std::move(__x));
   }
   constexpr bool empty() const noexcept { return _M_begin == _M_end; }
-  void push_front(const _Tp &__x) { _M_insert(begin(), __x); }
-  void push_front(_Tp &&__x) { _M_insert(begin(), std::move(__x)); }
-  void push_back(const _Tp &__x) { _M_insert(end(), __x); }
-  void push_back(_Tp &&__x) { _M_insert(end(), std::move(__x)); }
-  iterator erase(iterator __pos) {
+  void push_front(const _Tp &__x) { _M_insert(_M_begin, __x); }
+  void push_front(_Tp &&__x) { _M_insert(_M_begin, std::move(__x)); }
+  void push_back(const _Tp &__x) { _M_insert(_M_end, __x); }
+  void push_back(_Tp &&__x) { _M_insert(_M_end, std::move(__x)); }
+  iterator erase(iterator __pos, bool __end = false) {
     iterator __ans = __pos;
     ++__ans;
     if (__pos == _M_begin)
       ++_M_begin;
-    if (__pos == _M_end)
-      --_M_end;
     node_pointer &p = __pos._M_prev, n = __pos._M_node->_M_relative(p),
                  c = __pos._M_node;
     p->_M_recalc(c, n);
     n->_M_recalc(c, p);
+    if (__end)
+      _M_end._M_prev = p;
     // p->_M_xor = _M_process_xor(p->_M_xor, _M_process_xor(c, n));
     // n->_M_xor = _M_process_xor(n->_M_xor, _M_process_xor(c, p));
-    _Node_alloc_traits::destroy(_M_node_allocator, c);
-    _Node_alloc_traits::deallocate(_M_node_allocator, c, 1);
+    _M_free_node(c);
     --_M_size;
+    if (_M_size == 0)
+      _M_begin = _M_end;
     return __ans;
   }
-  void pop_back() { erase(--end()); }
+  void pop_back() { erase(--end(), true); }
   void pop_front() { erase(begin()); }
   iterator begin() noexcept { return _M_begin; }
   iterator end() noexcept { return _M_end; }
@@ -195,5 +195,8 @@ public:
   }
   ~XorList() { _M_destroy(); }
 };
+template <typename T, typename _Alloc>
+typename XorList<T, _Alloc>::_Node_alloc_type
+    XorList<T, _Alloc>::_M_node_allocator;
 } //__sg_lib
 #endif
