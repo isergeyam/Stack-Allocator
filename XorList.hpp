@@ -109,7 +109,7 @@ private:
     return __p;
   }
   template <typename... _Args>
-  void _M_insert(iterator __position, _Args &&... __args) {
+  iterator _M_insert(iterator __position, _Args &&... __args) {
     node_pointer __c1 = _M_create_node(std::forward<_Args>(__args)...);
     node_pointer &__p = __position._M_prev;
     node_pointer __c = __position._M_node;
@@ -129,6 +129,7 @@ private:
       _M_end._M_prev = __c1;
     __p = __c1;
     ++_M_size;
+    return __position;
   }
   void _M_destroy() {
     while (!empty())
@@ -148,19 +149,23 @@ public:
     _M_begin._M_node = _M_end._M_node = _M_create_node();
     _M_begin._M_prev = _M_end._M_prev = nullptr;
   }
-  void insert_before(iterator __position, const _Tp &__x) {
-    _M_insert(__position, __x);
+  iterator insert_before(iterator __position, const _Tp &__x) {
+    __position = _M_insert(__position, __x);
+    return __position;
   }
-  void insert_before(iterator __position, _Tp &&__x) {
-    _M_insert(__position, std::move(__x));
+  iterator insert_before(iterator __position, _Tp &&__x) {
+    __position = _M_insert(__position, std::move(__x));
+    return __position;
   }
-  void insert_after(iterator __position, const _Tp &__x) {
+  iterator insert_after(iterator __position, const _Tp &__x) {
     ++__position;
-    _M_insert(__position, __x);
+    __position = _M_insert(__position, __x);
+    return --__position;
   }
-  void insert_after(iterator __position, _Tp &&__x) {
+  iterator insert_after(iterator __position, _Tp &&__x) {
     ++__position;
-    _M_insert(__position, std::move(__x));
+    __position = _M_insert(__position, std::move(__x));
+    return --__position;
   }
   constexpr bool empty() const noexcept { return _M_begin == _M_end; }
   void push_front(const _Tp &__x) { _M_insert(_M_begin, __x); }
@@ -185,6 +190,7 @@ public:
     // n->_M_xor = _M_process_xor(n->_M_xor, _M_process_xor(c, p));
     _M_free_node(c);
     --_M_size;
+    __ans._M_prev = p;
     return __ans;
   }
   void pop_back() { erase(--end()); }

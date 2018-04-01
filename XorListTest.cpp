@@ -60,6 +60,16 @@ TEST(XorListTest, PushFrontandPopFront) {
     mlist.pop_front();
   ASSERT_EQ(mlist.size(), 0);
 }
+TEST(XorListTest, InsertBeforeandAfter) {
+  XorList<int> mlist{1, 2, 3, 4, 5};
+  auto it = mlist.begin();
+  std::advance(it, 2);
+  it = mlist.insert_before(it, 2);
+  it = mlist.insert_after(it, 3);
+  ASSERT_TRUE(
+      std::equal(mlist.begin(), mlist.end(),
+                 std::initializer_list<int>({1, 2, 2, 3, 3, 4, 5}).begin()));
+}
 class XorListTestGeneral : public ::testing::TestWithParam<int> {};
 TEST_P(XorListTestGeneral, General) {
   std::random_device rd;
