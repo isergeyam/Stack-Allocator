@@ -197,6 +197,23 @@ public:
     for (size_type i = 0; i < count; ++i)
       push_back(value);
   }
+  XorList(const XorList &other)
+      : XorList(alloc_traits::select_on_container_copy_construction(
+            other.get_allocator())) {
+    for (auto it = other.begin(); it != other.end(); ++it)
+      push_back(*it);
+  }
+  /*XorList(const XorList &other, const allocator_type &Alloc)
+      : XorList(other), _M_allocator(Alloc) {}*/
+  XorList(XorList &&other)
+      : _M_allocator(alloc_traits::select_on_container_copy_construction(
+            other.get_allocator())),
+        _M_begin(other._M_begin), _M_end(other._M_end) {
+    other._M_begin._M_node = other._M_end._M_node;
+    other._M_begin._M_prev = other._M_end._M_prev = nullptr;
+  }
+  /*XorList(XorList &&other, const allocator_type &Alloc)
+      : XorList(std::move(other)), _M_allocator(Alloc) {}*/
   ~XorList() { _M_destroy(); }
 };
 template <typename T, typename _Alloc>
