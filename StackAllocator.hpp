@@ -40,14 +40,14 @@ public:
   }
   StackAllocator(void *memory_, size_t allocated_memory_,
                  StackAllocator *prev_alloc_) noexcept
-      : memory_(*(new void *(memory_))),
-        allocated_memory_(*(new size_t(allocated_memory_))),
-        prev_alloc_(*(new StackAllocator *(prev_alloc_))),
+      : allocated_memory_(*(new size_t(allocated_memory_))),
+        memory_(*(new void *(memory_))),
         head_(*(new void *)),
+        prev_alloc_(*(new StackAllocator *(prev_alloc_))),
         alloc_num_(*(new size_t(1))) {}
   StackAllocator(const StackAllocator &other) noexcept
-      : memory_(other.memory_),
-        allocated_memory_(other.allocated_memory_),
+      : allocated_memory_(other.allocated_memory_),
+        memory_(other.memory_),
         head_(other.head_),
         prev_alloc_(other.prev_alloc_),
         alloc_num_(other.alloc_num_) {
