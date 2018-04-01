@@ -26,7 +26,8 @@ public:
   using node_pointer = typename _Node_alloc_traits::pointer;
 
 private:
-  static node_pointer _M_process_xor(node_pointer __x, node_pointer __y) {
+  static constexpr node_pointer _M_process_xor(node_pointer __x,
+                                               node_pointer __y) {
     return reinterpret_cast<node_pointer>(reinterpret_cast<uintptr_t>(__x) ^
                                           reinterpret_cast<uintptr_t>(__y));
   }
@@ -56,7 +57,6 @@ public:
   private:
     node_pointer _M_node;
     node_pointer _M_prev;
-    //_Node_pointer_alloc_type _M_node_pointer_allocator;
 
   public:
     _XorList_iterator() { _M_node = _M_prev = nullptr; }
@@ -97,10 +97,11 @@ private:
   iterator _M_begin;
   iterator _M_end;
   size_type _M_size;
-  node_pointer _M_get_node() {
+  static constexpr node_pointer _M_get_node() {
     return _Node_alloc_traits::allocate(_M_node_allocator, 1);
   }
-  template <typename... _Args> node_pointer _M_create_node(_Args &&... __args) {
+  template <typename... _Args>
+  node_pointer _M_create_node(_Args &&... __args) const {
     node_pointer __p = _M_get_node();
     pointer __val = alloc_traits::allocate(_M_allocator, 1);
     alloc_traits::construct(_M_allocator, __val,
@@ -113,14 +114,10 @@ private:
     node_pointer __c1 = _M_create_node(std::forward<_Args>(__args)...);
     node_pointer &__p = __position._M_prev;
     node_pointer __c = __position._M_node;
-    // std::swap(__p->_M_data, __c1->_M_data);
     if (__p != nullptr)
       (__p)->_M_recalc(__c, __c1);
-    //__p->_M_xor = _M_process_xor(__p->_M_xor, _M_process_xor(__c, __c1));
     __c1->_M_recalc(__p, __c);
-    //__c1->_M_xor = _M_process_xor(__c1->_M_xor, _M_process_xor(__p, __c));
     __c->_M_recalc(__p, __c1);
-    //__c->_M_xor = _M_process_xor(__c->_M_xor, _M_process_xor(__p, __c1));
     if (__position == _M_begin) {
       _M_begin._M_prev = __c1;
       --_M_begin;
@@ -186,8 +183,6 @@ public:
     n->_M_recalc(c, p);
     if (n == _M_end._M_node)
       _M_end._M_prev = p;
-    // p->_M_xor = _M_process_xor(p->_M_xor, _M_process_xor(c, n));
-    // n->_M_xor = _M_process_xor(n->_M_xor, _M_process_xor(c, p));
     _M_free_node(c);
     --_M_size;
     __ans._M_prev = p;
@@ -211,8 +206,6 @@ public:
     for (auto it = other.begin(); it != other.end(); ++it)
       push_back(*it);
   }
-  /*XorList(const XorList &other, const allocator_type &Alloc)
-      : XorList(other), _M_allocator(Alloc) {}*/
   XorList(XorList &&other)
       : _M_allocator(alloc_traits::select_on_container_copy_construction(
             other.get_allocator())),
@@ -227,8 +220,6 @@ public:
       push_back(*it);
   }
   allocator_type get_allocator() const noexcept { return _M_allocator; }
-  /*XorList(XorList &&other, const allocator_type &Alloc)
-      : XorList(std::move(other)), _M_allocator(Alloc) {}*/
   ~XorList() { _M_destroy(); }
 };
 template <typename T, typename _Alloc>

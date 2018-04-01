@@ -61,17 +61,10 @@ public:
       memory_ = malloc(allocated_memory_);
       head_ = (char *)memory_ + num_ * sizeof(T);
       ans = memory_;
-      /*memory_ = std::realloc(
-              memory_, std::max(static_cast<size_t>(
-              2 * ((char *)head_ - (char *)memory_)),
-              2 * allocated_memory_));
-              head_ = memory_ + ((char *)head_ - (char *)memory_) + num_ *
-              sizeof(T);*/
     }
-    return static_cast<T *>(ans) /*- static_cast<T *>((void *)memory_)*/;
+    return static_cast<T *>(ans);
   }
   void construct(pointer p, const_reference val) noexcept {
-    // T *p = static_cast<T *>((void *)(memory_ + pp));
     if ((char *)p >= (char *)memory_ &&
         (char *)p <= (char *)memory_ + allocated_memory_)
       p = new ((void *)p) T(val);
@@ -80,7 +73,6 @@ public:
     return;
   }
   void destroy(pointer p) noexcept {
-    // T *p = static_cast<T *>((void *)(memory_ + pp));
     ((T *)p)->~T();
     return;
   }
