@@ -8,6 +8,23 @@ TEST(XorListTest, DefaultConstructor) {
   XorList<int> mlist;
   ASSERT_TRUE(mlist.empty());
 }
+TEST(XorListTest, InitializerConstructor) {
+  XorList<int> mlist1{1, 2, 3, 4, 5};
+  std::list<int> mlist2{1, 2, 3, 4, 5};
+  ASSERT_TRUE(std::equal(mlist1.begin(), mlist1.end(), mlist2.begin()));
+}
+TEST(XorListTest, CopyConstructor) {
+  XorList<int> mlist1{1, 2, 3, 4, 5};
+  XorList<int> mlist2(mlist1);
+  ASSERT_TRUE(std::equal(mlist1.begin(), mlist1.end(), mlist2.begin()));
+}
+TEST(XorListTest, MoveConstructor) {
+  XorList<int> mlist1{1, 2, 3, 4, 5};
+  XorList<int> mlist2(mlist1);
+  XorList<int> mlist3(std::move(mlist2));
+  ASSERT_TRUE(mlist2.empty());
+  ASSERT_TRUE(std::equal(mlist1.begin(), mlist1.end(), mlist3.begin()));
+}
 /*void print_list(XorList<int> &mlist) {
   for (auto it = mlist.begin(); it != mlist.end(); ++it)
     std::cout << *it << " ";
@@ -85,7 +102,7 @@ TEST_P(XorListTestGeneral, General) {
   }
   ASSERT_TRUE(std::equal(mlist1.begin(), mlist1.end(), mlist2.begin()));
 }
-INSTANTIATE_TEST_CASE_P(INST_HUMAN_SWORDSMAN, XorListTestGeneral,
+INSTANTIATE_TEST_CASE_P(INST_GENERAL, XorListTestGeneral,
                         ::testing::Values(10000));
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

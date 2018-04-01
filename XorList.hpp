@@ -191,6 +191,8 @@ public:
   void pop_front() { erase(begin()); }
   iterator begin() noexcept { return _M_begin; }
   iterator end() noexcept { return _M_end; }
+  iterator begin() const noexcept { return _M_begin; }
+  iterator end() const noexcept { return _M_end; }
   constexpr size_type size() const noexcept { return _M_size; }
   XorList(size_type count, const _Tp &value, const _Alloc &alloc = _Alloc())
       : XorList(alloc) {
@@ -209,9 +211,16 @@ public:
       : _M_allocator(alloc_traits::select_on_container_copy_construction(
             other.get_allocator())),
         _M_begin(other._M_begin), _M_end(other._M_end) {
-    other._M_begin._M_node = other._M_end._M_node;
+    other._M_begin._M_node = other._M_end._M_node = _M_create_node();
     other._M_begin._M_prev = other._M_end._M_prev = nullptr;
   }
+  XorList(std::initializer_list<_Tp> init,
+          const allocator_type &Alloc = allocator_type())
+      : XorList(Alloc) {
+    for (auto it = init.begin(); it != init.end(); ++it)
+      push_back(*it);
+  }
+  allocator_type get_allocator() const noexcept { return _M_allocator; }
   /*XorList(XorList &&other, const allocator_type &Alloc)
       : XorList(std::move(other)), _M_allocator(Alloc) {}*/
   ~XorList() { _M_destroy(); }
