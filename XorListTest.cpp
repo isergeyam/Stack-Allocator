@@ -23,6 +23,21 @@ TEST(XorListTest, PushBack) {
     ++i;
   }
 }
+TEST(XorListTest, PushFront) {
+  XorList<int> mlist;
+  for (int i = 0; i < 10; ++i) {
+    if (i % 2)
+      mlist.push_back(i);
+    else
+      mlist.push_front(i);
+  }
+  std::vector<int> test_vec{8, 6, 4, 2, 0, 1, 3, 5, 7, 9};
+  for (auto it = mlist.begin(); it != mlist.end(); ++it) {
+    static int i = 0;
+    ASSERT_EQ(test_vec[i], *it);
+    ++i;
+  }
+}
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
