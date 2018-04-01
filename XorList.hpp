@@ -109,7 +109,7 @@ private:
     return __p;
   }
   template <typename... _Args>
-  void _M_insert(iterator &__position, _Args &&... __args) {
+  void _M_insert(iterator __position, _Args &&... __args) {
     node_pointer __c1 = _M_create_node(std::forward<_Args>(__args)...);
     node_pointer &__p = __position._M_prev;
     node_pointer __c = __position._M_node;
@@ -124,6 +124,8 @@ private:
       _M_begin._M_prev = __c1;
       --_M_begin;
     }
+    if (__position == _M_end)
+      _M_end._M_prev = __c1;
     __p = __c1;
     ++_M_size;
   }
