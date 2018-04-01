@@ -100,8 +100,7 @@ private:
   static constexpr node_pointer _M_get_node() {
     return _Node_alloc_traits::allocate(_M_node_allocator, 1);
   }
-  template <typename... _Args>
-  node_pointer _M_create_node(_Args &&... __args) const {
+  template <typename... _Args> node_pointer _M_create_node(_Args &&... __args) {
     node_pointer __p = _M_get_node();
     pointer __val = alloc_traits::allocate(_M_allocator, 1);
     alloc_traits::construct(_M_allocator, __val,
