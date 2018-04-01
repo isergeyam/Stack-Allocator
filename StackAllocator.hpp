@@ -10,8 +10,10 @@ private:
   size_t &alloc_num_;
   static const size_t ALLOC_MEM_;
   inline void free_variables() {
-    if (alloc_num_ != 1)
+    if (alloc_num_ != 1) {
+      --alloc_num_;
       return;
+    }
     free(memory_);
     delete prev_alloc_;
     delete &allocated_memory_;
@@ -51,7 +53,6 @@ public:
         alloc_num_(other.alloc_num_) {
     ++alloc_num_;
   }
-  StackAllocator &operator=(const StackAllocator &) = delete;
   pointer allocate(size_t num_) noexcept {
     void *ans = head_;
     head_ = (char *)head_ + sizeof(T) * num_;
