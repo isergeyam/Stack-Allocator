@@ -114,7 +114,8 @@ private:
     node_pointer &__p = __position._M_prev;
     node_pointer __c = __position._M_node;
     // std::swap(__p->_M_data, __c1->_M_data);
-    (__p)->_M_recalc(__c, __c1);
+    if (__p != nullptr)
+      (__p)->_M_recalc(__c, __c1);
     //__p->_M_xor = _M_process_xor(__p->_M_xor, _M_process_xor(__c, __c1));
     __c1->_M_recalc(__p, __c);
     //__c1->_M_xor = _M_process_xor(__c1->_M_xor, _M_process_xor(__p, __c));
@@ -144,8 +145,8 @@ private:
 public:
   explicit XorList(const _Alloc &alloc = _Alloc())
       : _M_allocator(alloc), _M_size(0) {
-    _M_begin._M_node = _M_begin._M_prev = _M_create_node();
-    _M_end = _M_begin;
+    _M_begin._M_node = _M_end._M_node = _M_create_node();
+    _M_begin._M_prev = _M_end._M_prev = nullptr;
   }
   void insert_before(iterator __position, const _Tp &__x) {
     _M_insert(__position, __x);
@@ -166,26 +167,27 @@ public:
   void push_front(_Tp &&__x) { _M_insert(_M_begin, std::move(__x)); }
   void push_back(const _Tp &__x) { _M_insert(_M_end, __x); }
   void push_back(_Tp &&__x) { _M_insert(_M_end, std::move(__x)); }
-  iterator erase(iterator __pos, bool __end = false) {
+  iterator erase(iterator __pos) {
     iterator __ans = __pos;
     ++__ans;
-    if (__pos == _M_begin)
+    if (__pos == _M_begin) {
       ++_M_begin;
-    node_pointer &p = __pos._M_prev, n = __pos._M_node->_M_relative(p),
+      _M_begin._M_prev = nullptr;
+    }
+    node_pointer p = __pos._M_prev, n = __pos._M_node->_M_relative(p),
                  c = __pos._M_node;
-    p->_M_recalc(c, n);
+    if (p != nullptr)
+      p->_M_recalc(c, n);
     n->_M_recalc(c, p);
-    if (__end)
+    if (n == _M_end._M_node)
       _M_end._M_prev = p;
     // p->_M_xor = _M_process_xor(p->_M_xor, _M_process_xor(c, n));
     // n->_M_xor = _M_process_xor(n->_M_xor, _M_process_xor(c, p));
     _M_free_node(c);
     --_M_size;
-    if (_M_size == 0)
-      _M_begin = _M_end;
     return __ans;
   }
-  void pop_back() { erase(--end(), true); }
+  void pop_back() { erase(--end()); }
   void pop_front() { erase(begin()); }
   iterator begin() noexcept { return _M_begin; }
   iterator end() noexcept { return _M_end; }

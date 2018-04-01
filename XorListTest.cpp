@@ -1,6 +1,7 @@
 #include "XorList.hpp"
 #include <gtest/gtest.h>
 #include <iterator>
+#include <list>
 using __sg_lib::XorList;
 TEST(XorListTest, DefaultConstructor) {
   XorList<int> mlist;
@@ -11,7 +12,7 @@ TEST(XorListTest, DefaultConstructor) {
     std::cout << *it << " ";
   std::cout << std::endl;
 }*/
-TEST(XorListTest, PushBack) {
+TEST(XorListTest, PushBackandPopBack) {
   XorList<int> mlist;
   for (int i = 0; i < 10; ++i) {
     mlist.push_back(i);
@@ -23,7 +24,7 @@ TEST(XorListTest, PushBack) {
     ++i;
   }
 }
-TEST(XorListTest, PushFront) {
+TEST(XorListTest, PushFrontandPopFront) {
   XorList<int> mlist;
   for (int i = 0; i < 10; ++i) {
     if (i % 2)
@@ -37,6 +38,8 @@ TEST(XorListTest, PushFront) {
     ASSERT_EQ(test_vec[i], *it);
     ++i;
   }
+  while (!mlist.empty())
+    mlist.pop_front();
 }
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
