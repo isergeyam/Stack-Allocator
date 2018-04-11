@@ -1,13 +1,14 @@
 #include <algorithm>
 #include <cstdlib>
+#include <functional>
 template <typename T> class StackAllocator;
 template <typename T> class StackAllocator {
 private:
-  size_t &allocated_memory_;
-  void *&memory_;
-  void *&head_;
-  StackAllocator *&prev_alloc_;
-  size_t &alloc_num_;
+  std::reference_wrapper<size_t> allocated_memory_;
+  std::reference_wrapper<void *> memory_;
+  std::reference_wrapper<void *> head_;
+  std::reference_wrapper<StackAllocator *> prev_alloc_;
+  std::reference_wrapper<size_t> alloc_num_;
   static const size_t ALLOC_MEM_;
   inline void free_variables() {
     if (alloc_num_ != 1) {
@@ -16,11 +17,11 @@ private:
     }
     free(memory_);
     delete prev_alloc_;
-    delete &allocated_memory_;
-    delete &memory_;
-    delete &head_;
-    delete &prev_alloc_;
-    delete &alloc_num_;
+    delete &(allocated_memory_.get());
+    delete &(memory_.get());
+    delete &(head_.get());
+    delete &(prev_alloc_.get());
+    delete &(alloc_num_.get());
   }
 
 public:
@@ -34,9 +35,9 @@ public:
       : allocated_memory_(*(new size_t)), memory_(*(new void *)),
         head_(*(new void *)), prev_alloc_(*(new StackAllocator *(nullptr))),
         alloc_num_(*(new size_t(1))) {
-    allocated_memory_ = std::max(2 * sizeof(T), ALLOC_MEM_);
-    memory_ = malloc(allocated_memory_);
-    head_ = memory_;
+    allocated_memory_.get() = std::max(2 * sizeof(T), ALLOC_MEM_);
+    memory_.get() = malloc(allocated_memory_);
+    head_.get() = memory_;
   }
   StackAllocator(void *memory_, size_t allocated_memory_,
                  StackAllocator *prev_alloc_) noexcept
@@ -53,23 +54,34 @@ public:
         alloc_num_(other.alloc_num_) {
     ++alloc_num_;
   }
+  StackAllocator &operator=(const StackAllocator &other) {
+    free_variables();
+    allocated_memory_ = other.allocated_memory_;
+    memory_ = other.memory_;
+    head_ = other.head_;
+    prev_alloc_ = other.prev_alloc_;
+    alloc_num_ = other.alloc_num_;
+    ++alloc_num_;
+    return *this;
+  }
   pointer allocate(size_t num_) noexcept {
     void *ans = head_;
-    head_ = (char *)head_ + sizeof(T) * num_;
-    if ((char *)head_ > (char *)memory_ + allocated_memory_) {
-      prev_alloc_ = new StackAllocator(memory_, allocated_memory_, prev_alloc_);
-      memory_ = malloc(allocated_memory_);
-      head_ = (char *)memory_ + num_ * sizeof(T);
+    head_.get() = (char *)(head_.get()) + sizeof(T) * num_;
+    if ((char *)(head_.get()) > (char *)(memory_.get()) + allocated_memory_) {
+      prev_alloc_.get() =
+          new StackAllocator(memory_, allocated_memory_, prev_alloc_);
+      memory_.get() = malloc(allocated_memory_);
+      head_.get() = (char *)(memory_.get()) + num_ * sizeof(T);
       ans = memory_;
     }
     return static_cast<T *>(ans);
   }
   void construct(pointer p, const_reference val) noexcept {
-    if ((char *)p >= (char *)memory_ &&
-        (char *)p <= (char *)memory_ + allocated_memory_)
+    if ((char *)p >= (char *)(memory_.get()) &&
+        (char *)p <= (char *)(memory_.get()) + allocated_memory_)
       p = new ((void *)p) T(val);
     else
-      prev_alloc_->construct(p, val);
+      prev_alloc_.get()->construct(p, val);
     return;
   }
   void destroy(pointer p) noexcept {

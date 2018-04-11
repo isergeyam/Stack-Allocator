@@ -199,18 +199,22 @@ public:
     for (size_type i = 0; i < count; ++i)
       push_back(value);
   }
-  XorList(const XorList &other)
-      : XorList(alloc_traits::select_on_container_copy_construction(
-            other.get_allocator())) {
+  XorList(const XorList &other) : XorList() { *this = other; }
+  XorList(XorList &&other) { *this = std::move(other); }
+  XorList &operator=(const XorList &other) {
+    _M_allocator =
+        alloc_traits::select_on_container_copy_construction(other._M_allocator);
     for (auto it = other.begin(); it != other.end(); ++it)
       push_back(*it);
+    return *this;
   }
-  XorList(XorList &&other)
-      : _M_allocator(alloc_traits::select_on_container_copy_construction(
-            other.get_allocator())),
-        _M_begin(other._M_begin), _M_end(other._M_end) {
+  XorList &operator=(XorList &&other) {
+    _M_allocator = other._M_allocator;
+    _M_begin = other._M_begin;
+    _M_end = other._M_end;
     other._M_begin._M_node = other._M_end._M_node = _M_create_node();
     other._M_begin._M_prev = other._M_end._M_prev = nullptr;
+    return *this;
   }
   XorList(std::initializer_list<_Tp> init,
           const allocator_type &Alloc = allocator_type())
