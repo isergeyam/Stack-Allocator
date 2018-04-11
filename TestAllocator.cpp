@@ -54,18 +54,9 @@ void process_sample(size_t n1, size_t n2, const std::string &str) {
   assert(std::equal(l1.begin(), l1.end(), l2.begin()));
 }
 int main() {
-  // StackAllocator<int> myalloc;
-  // int *beg = myalloc.allocate(1);
-  // myalloc.construct(beg, 1);
   size_t n1, n2;
   std::cin >> n1 >> n2;
   process_sample<std::list>(n1, n2, "list");
   process_sample<XorList>(n1, n2, "xorlist");
-  // std::copy(mvec.begin(), mvec.end(),
-  //         std::ostream_iterator<int>(std::cout, " "));
-  /*std::copy(l1.begin(), l1.end(), std::ostream_iterator<int>(std::cout, " "));
-  std::cout << std::endl;
-  std::copy(l2.begin(), l2.end(), std::ostream_iterator<int>(std::cout, " "));
-  std::cout << std::endl;*/
   return 0;
 }
