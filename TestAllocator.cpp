@@ -8,7 +8,6 @@
 #include <list>
 #include <random>
 #include <vector>
-using __sg_lib::XorList;
 template <typename _List>
 _List process_operations(size_t n1, size_t n2, const std::vector<int> &mvec) {
   _List mlist;

@@ -3,7 +3,6 @@
 #include <iterator>
 #include <list>
 #include <random>
-using __sg_lib::XorList;
 TEST(XorListTest, DefaultConstructor) {
   XorList<int> mlist;
   ASSERT_TRUE(mlist.empty());

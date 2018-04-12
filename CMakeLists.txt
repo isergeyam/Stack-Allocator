@@ -5,5 +5,5 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -g -fsanitize=address"
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 add_executable(TestAllocator StackAllocator.hpp TestAllocator.cpp)
 target_link_libraries(TestAllocator gtest pthread)
-add_executable(XorListTest StackAllocator.hpp XorListTest.cpp)
+add_executable(XorListTest StackAllocator.hpp  XorList.hpp XorListTest.cpp)
 target_link_libraries(XorListTest gtest pthread)

@@ -1,6 +1,9 @@
 #include <algorithm>
+#include <cassert>
+#include <cstddef>
 #include <cstdlib>
 #include <functional>
+#include <memory>
 template <typename T> class StackAllocator;
 template <typename T> class StackAllocator {
 private:
@@ -64,16 +67,21 @@ public:
     ++alloc_num_;
     return *this;
   }
-  pointer allocate(size_t num_) noexcept {
+  pointer allocate(size_t num_) {
     void *ans = head_;
-    head_.get() = (char *)(head_.get()) + sizeof(T) * num_;
-    if ((char *)(head_.get()) > (char *)(memory_.get()) + allocated_memory_) {
+    size_t m_align = alignof(std::max_align_t);
+    size_t offset = sizeof(T) * num_;
+    head_.get() = (char *)(head_.get()) + offset;
+    if ((char *)(head_.get()) + m_align >
+        (char *)(memory_.get()) + allocated_memory_) {
       prev_alloc_.get() =
           new StackAllocator(memory_, allocated_memory_, prev_alloc_);
       memory_.get() = malloc(allocated_memory_);
-      head_.get() = (char *)(memory_.get()) + num_ * sizeof(T);
+      head_.get() = (char *)(memory_.get()) + offset;
       ans = memory_;
     }
+    if (!std::align(m_align, 0, head_, m_align))
+      throw std::bad_alloc();
     return static_cast<T *>(ans);
   }
   void construct(pointer p, const_reference val) noexcept {

@@ -4,8 +4,7 @@
 #include <cstddef>
 #include <iostream>
 #include <iterator>
-namespace __sg_lib {
-template <typename _Tp, typename _Alloc = std::allocator<int>> class XorList {
+template <typename _Tp, typename _Alloc = std::allocator<_Tp>> class XorList {
 public:
   using value_type = _Tp;
   using allocator_type = _Alloc;
@@ -228,5 +227,4 @@ public:
 template <typename T, typename _Alloc>
 typename XorList<T, _Alloc>::_Node_alloc_type
     XorList<T, _Alloc>::_M_node_allocator;
-} //__sg_lib
 #endif
