@@ -26,6 +26,10 @@ private:
     delete &(prev_alloc_.get());
     delete &(alloc_num_.get());
   }
+  template<typename _Tp>
+  _Tp* m_alloc(_Tp x = _Tp()) {
+    return new (std::malloc(sizeof(_Tp))) _Tp(x);
+  }
 
 public:
   typedef T value_type;
@@ -35,20 +39,20 @@ public:
   typedef const T *const_pointer;
   template <class U> struct rebind { typedef StackAllocator<U> other; };
   StackAllocator()
-      : allocated_memory_(*(new size_t)), memory_(*(new void *)),
-        head_(*(new void *)), prev_alloc_(*(new StackAllocator *(nullptr))),
-        alloc_num_(*(new size_t(1))) {
+      : allocated_memory_(*m_alloc<size_t>()), memory_(*m_alloc<void*>()),
+        head_(*m_alloc<void*>()), prev_alloc_(*m_alloc<StackAllocator*>()),
+        alloc_num_(*m_alloc<size_t>(1)) {
     allocated_memory_.get() = std::max(2 * sizeof(T), ALLOC_MEM_);
     memory_.get() = malloc(allocated_memory_);
     head_.get() = memory_;
   }
   StackAllocator(void *memory_, size_t allocated_memory_,
                  StackAllocator *prev_alloc_) noexcept
-      : allocated_memory_(*(new size_t(allocated_memory_))),
-        memory_(*(new void *(memory_))),
-        head_(*(new void *)),
-        prev_alloc_(*(new StackAllocator *(prev_alloc_))),
-        alloc_num_(*(new size_t(1))) {}
+      : allocated_memory_(*m_alloc(allocated_memory_)),
+        memory_(*m_alloc(memory_)),
+        head_(*m_alloc<void*>()),
+        prev_alloc_(*m_alloc(prev_alloc_)),
+        alloc_num_(*m_alloc<size_t>(1)) {}
   StackAllocator(const StackAllocator &other) noexcept
       : allocated_memory_(other.allocated_memory_),
         memory_(other.memory_),
@@ -75,7 +79,7 @@ public:
     if ((char *)(head_.get()) + m_align >
         (char *)(memory_.get()) + allocated_memory_) {
       prev_alloc_.get() =
-          new StackAllocator(memory_, allocated_memory_, prev_alloc_);
+          new (std::malloc(sizeof(StackAllocator))) StackAllocator(memory_, allocated_memory_, prev_alloc_);
       memory_.get() = malloc(allocated_memory_);
       head_.get() = (char *)(memory_.get()) + offset;
       ans = memory_;
