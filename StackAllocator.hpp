@@ -19,12 +19,14 @@ private:
       return;
     }
     free(memory_);
-    delete prev_alloc_;
-    delete &(allocated_memory_.get());
-    delete &(memory_.get());
-    delete &(head_.get());
-    delete &(prev_alloc_.get());
-    delete &(alloc_num_.get());
+    if (prev_alloc_ != nullptr)
+      prev_alloc_.get()->~StackAllocator();
+    std::free( prev_alloc_);
+    std::free(&(allocated_memory_.get()));
+    std::free(&(memory_.get()));
+    std::free(&(head_.get()));
+    std::free(&(prev_alloc_.get()));
+    std::free(&(alloc_num_.get()));
   }
   template<typename _Tp>
   _Tp* m_alloc(_Tp x = _Tp()) {
