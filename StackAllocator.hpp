@@ -4,6 +4,9 @@
 #include <cstdlib>
 #include <functional>
 #include <memory>
+template <typename _Tp> static _Tp *m_alloc(_Tp x = _Tp()) {
+  return new (std::malloc(sizeof(_Tp))) _Tp(x);
+}
 template <typename T> class StackAllocator;
 template <typename T> class StackAllocator {
 private:
@@ -21,16 +24,12 @@ private:
     free(memory_);
     if (prev_alloc_ != nullptr)
       prev_alloc_.get()->~StackAllocator();
-    std::free( prev_alloc_);
+    std::free(prev_alloc_);
     std::free(&(allocated_memory_.get()));
     std::free(&(memory_.get()));
     std::free(&(head_.get()));
     std::free(&(prev_alloc_.get()));
     std::free(&(alloc_num_.get()));
-  }
-  template<typename _Tp>
-  _Tp* m_alloc(_Tp x = _Tp()) {
-    return new (std::malloc(sizeof(_Tp))) _Tp(x);
   }
 
 public:
@@ -41,8 +40,8 @@ public:
   typedef const T *const_pointer;
   template <class U> struct rebind { typedef StackAllocator<U> other; };
   StackAllocator()
-      : allocated_memory_(*m_alloc<size_t>()), memory_(*m_alloc<void*>()),
-        head_(*m_alloc<void*>()), prev_alloc_(*m_alloc<StackAllocator*>()),
+      : allocated_memory_(*m_alloc<size_t>()), memory_(*m_alloc<void *>()),
+        head_(*m_alloc<void *>()), prev_alloc_(*m_alloc<StackAllocator *>()),
         alloc_num_(*m_alloc<size_t>(1)) {
     allocated_memory_.get() = std::max(2 * sizeof(T), ALLOC_MEM_);
     memory_.get() = malloc(allocated_memory_);
@@ -52,7 +51,7 @@ public:
                  StackAllocator *prev_alloc_) noexcept
       : allocated_memory_(*m_alloc(allocated_memory_)),
         memory_(*m_alloc(memory_)),
-        head_(*m_alloc<void*>()),
+        head_(*m_alloc<void *>()),
         prev_alloc_(*m_alloc(prev_alloc_)),
         alloc_num_(*m_alloc<size_t>(1)) {}
   StackAllocator(const StackAllocator &other) noexcept
@@ -75,19 +74,16 @@ public:
   }
   pointer allocate(size_t num_) {
     void *ans = head_;
-    size_t m_align = alignof(std::max_align_t);
     size_t offset = sizeof(T) * num_;
+    offset += offset % std::max(alignof(T), alignof(std::max_align_t));
     head_.get() = (char *)(head_.get()) + offset;
-    if ((char *)(head_.get()) + m_align >
-        (char *)(memory_.get()) + allocated_memory_) {
-      prev_alloc_.get() =
-          new (std::malloc(sizeof(StackAllocator))) StackAllocator(memory_, allocated_memory_, prev_alloc_);
+    if ((char *)(head_.get()) > (char *)(memory_.get()) + allocated_memory_) {
+      prev_alloc_.get() = new (std::malloc(sizeof(StackAllocator)))
+          StackAllocator(memory_, allocated_memory_, prev_alloc_);
       memory_.get() = malloc(allocated_memory_);
       head_.get() = (char *)(memory_.get()) + offset;
       ans = memory_;
     }
-    if (!std::align(m_align, 0, head_, m_align))
-      throw std::bad_alloc();
     return static_cast<T *>(ans);
   }
   void construct(pointer p, const_reference val) noexcept {
