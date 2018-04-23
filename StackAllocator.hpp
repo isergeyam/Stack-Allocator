@@ -5,7 +5,10 @@
 #include <functional>
 #include <memory>
 template <typename _Tp> static _Tp *m_alloc(_Tp x = _Tp()) {
-  return new (std::malloc(sizeof(_Tp))) _Tp(x);
+  void *chunk_ = std::malloc(sizeof(_Tp));
+  if (chunk_ == nullptr)
+    throw std::bad_alloc();
+  return new (chunk_) _Tp(x);
 }
 template <typename T> class StackAllocator;
 template <typename T> class StackAllocator {
@@ -21,7 +24,7 @@ private:
       --alloc_num_;
       return;
     }
-    free(memory_);
+    std::free(memory_);
     if (prev_alloc_ != nullptr)
       prev_alloc_.get()->~StackAllocator();
     std::free(prev_alloc_);
@@ -40,18 +43,20 @@ public:
   typedef const T *const_pointer;
   template <class U> struct rebind { typedef StackAllocator<U> other; };
   StackAllocator()
-      : allocated_memory_(*m_alloc<size_t>()), memory_(*m_alloc<void *>()),
-        head_(*m_alloc<void *>()), prev_alloc_(*m_alloc<StackAllocator *>()),
+      : allocated_memory_(*m_alloc<size_t>(0)), memory_(*m_alloc<void *>(nullptr)),
+        head_(*m_alloc<void *>(nullptr)), prev_alloc_(*m_alloc<StackAllocator *>(nullptr)),
         alloc_num_(*m_alloc<size_t>(1)) {
     allocated_memory_.get() = std::max(2 * sizeof(T), ALLOC_MEM_);
     memory_.get() = malloc(allocated_memory_);
+    if (memory_ == nullptr)
+      throw std::bad_alloc();
     head_.get() = memory_;
   }
   StackAllocator(void *memory_, size_t allocated_memory_,
                  StackAllocator *prev_alloc_) noexcept
       : allocated_memory_(*m_alloc(allocated_memory_)),
         memory_(*m_alloc(memory_)),
-        head_(*m_alloc<void *>()),
+        head_(*m_alloc<void *>(nullptr)),
         prev_alloc_(*m_alloc(prev_alloc_)),
         alloc_num_(*m_alloc<size_t>(1)) {}
   StackAllocator(const StackAllocator &other) noexcept
@@ -78,9 +83,10 @@ public:
     offset += offset % std::max(alignof(T), alignof(std::max_align_t));
     head_.get() = (char *)(head_.get()) + offset;
     if ((char *)(head_.get()) > (char *)(memory_.get()) + allocated_memory_) {
-      prev_alloc_.get() = new (std::malloc(sizeof(StackAllocator)))
-          StackAllocator(memory_, allocated_memory_, prev_alloc_);
+      prev_alloc_.get() = m_alloc(StackAllocator(memory_, allocated_memory_, prev_alloc_));
       memory_.get() = malloc(allocated_memory_);
+      if (memory_ == nullptr)
+        throw std::bad_alloc();
       head_.get() = (char *)(memory_.get()) + offset;
       ans = memory_;
     }
