@@ -10,6 +10,40 @@ template <typename _Tp> static _Tp *m_alloc(_Tp x = _Tp()) {
     throw std::bad_alloc();
   return new (chunk_) _Tp(x);
 }
+struct StackBlock {
+  char *memory_;
+  StackBlock *prev_block;
+  ~StackBlock() {
+    std::free(memory_);
+    if (prev_block != nullptr)
+      prev_block->~StackBlock();
+    std::free(prev_block);
+  }
+  static constexpr size_t ALLOC_MEM_ = 100000;
+  StackBlock() : prev_block(nullptr) {
+    memory_ = static_cast<char *>(std::malloc(ALLOC_MEM_));
+  }
+  StackBlock(char *memory_, StackBlock *prev_block)
+      : memory_(memory_), prev_block(prev_block) {}
+};
+class StackBlockAlloc {
+private:
+  size_t alloc_num;
+  char *head_;
+  StackBlock *m_block;
+  StackBlockAlloc() : alloc_num(1), head_(nullptr), m_block(nullptr) {}
+  void *allocate(size_t num_) {
+    if (head_ + num_ > m_block->memory_ + StackBlock::ALLOC_MEM_) {
+      StackBlock *prev_block = m_block;
+      m_block = new (std::malloc(sizeof(StackBlock))) StackBlock();
+      m_block->prev_block = prev_block;
+      head_ = m_block->memory_;
+    }
+    char *ans = head_;
+    head_ += num_;
+    return static_cast<void *>(ans);
+  }
+};
 template <typename T> class StackAllocator;
 template <typename T> class StackAllocator {
 private:
@@ -43,8 +77,9 @@ public:
   typedef const T *const_pointer;
   template <class U> struct rebind { typedef StackAllocator<U> other; };
   StackAllocator()
-      : allocated_memory_(*m_alloc<size_t>(0)), memory_(*m_alloc<void *>(nullptr)),
-        head_(*m_alloc<void *>(nullptr)), prev_alloc_(*m_alloc<StackAllocator *>(nullptr)),
+      : allocated_memory_(*m_alloc<size_t>(0)),
+        memory_(*m_alloc<void *>(nullptr)), head_(*m_alloc<void *>(nullptr)),
+        prev_alloc_(*m_alloc<StackAllocator *>(nullptr)),
         alloc_num_(*m_alloc<size_t>(1)) {
     allocated_memory_.get() = std::max(2 * sizeof(T), ALLOC_MEM_);
     memory_.get() = malloc(allocated_memory_);
@@ -83,7 +118,8 @@ public:
     offset += offset % std::max(alignof(T), alignof(std::max_align_t));
     head_.get() = (char *)(head_.get()) + offset;
     if ((char *)(head_.get()) > (char *)(memory_.get()) + allocated_memory_) {
-      prev_alloc_.get() = m_alloc(StackAllocator(memory_, allocated_memory_, prev_alloc_));
+      prev_alloc_.get() =
+          m_alloc(StackAllocator(memory_, allocated_memory_, prev_alloc_));
       memory_.get() = malloc(allocated_memory_);
       if (memory_ == nullptr)
         throw std::bad_alloc();
@@ -93,11 +129,11 @@ public:
     return static_cast<T *>(ans);
   }
   void construct(pointer p, const_reference val) noexcept {
-    if ((char *)p >= (char *)(memory_.get()) &&
-        (char *)p <= (char *)(memory_.get()) + allocated_memory_)
-      p = new ((void *)p) T(val);
-    else
-      prev_alloc_.get()->construct(p, val);
+    /*if ((char *)p >= (char *)(memory_.get()) &&
+        (char *)p <= (char *)(memory_.get()) + allocated_memory_)*/
+    p = new ((void *)p) T(val);
+    // else
+    // prev_alloc_.get()->construct(p, val);
     return;
   }
   void destroy(pointer p) noexcept {
@@ -106,11 +142,11 @@ public:
   }
   void deallocate(T *, size_t) noexcept {}
   ~StackAllocator() { free_variables(); }
-  bool operator==(const StackAllocator &other) const noexcept {
+  /*bool operator==(const StackAllocator &other) const noexcept {
     return memory_ == other.memory_;
   }
   bool operator!=(const StackAllocator &other) const noexcept {
     return !operator==(other);
-  }
+  }*/
 };
 template <typename T> const size_t StackAllocator<T>::ALLOC_MEM_ = 100000;
