@@ -76,10 +76,12 @@ public:
   template <class U> struct rebind { typedef StackAllocator<U> other; };
   StackAllocator()
       : m_alloc(new (std::malloc(sizeof(StackBlockAlloc))) StackBlockAlloc()) {}
-  StackAllocator(const StackAllocator &other) : m_alloc(nullptr) {
+  template <typename U>
+  StackAllocator(const StackAllocator<U> &other) : m_alloc(nullptr) {
     *this = other;
   }
-  StackAllocator &operator=(const StackAllocator &other) {
+  template <typename U>
+  StackAllocator &operator=(const StackAllocator<U> &other) {
     free_variables();
     m_alloc = other.m_alloc;
     ++m_alloc->alloc_num;
