@@ -26,11 +26,11 @@ struct StackBlock {
       throw std::bad_alloc();
   }
 };
-struct StackBlockAlloc {
+struct StackRealAllocator {
   size_t alloc_num;
   char *head_;
   StackBlock *m_block;
-  StackBlockAlloc() : alloc_num(1), head_(nullptr), m_block(nullptr) {}
+  StackRealAllocator() : alloc_num(1), head_(nullptr), m_block(nullptr) {}
   void *allocate(size_t num_) {
     if (m_block == nullptr) {
       m_block = new (std::malloc(sizeof(StackBlock))) StackBlock();
@@ -46,7 +46,7 @@ struct StackBlockAlloc {
     head_ += num_;
     return static_cast<void *>(ans);
   }
-  ~StackBlockAlloc() {
+  ~StackRealAllocator() {
     --alloc_num;
     if (alloc_num == 0) {
       if (m_block != nullptr)
@@ -58,11 +58,11 @@ struct StackBlockAlloc {
 template <typename T> class StackAllocator;
 template <typename T> class StackAllocator {
 private:
-  StackBlockAlloc *m_alloc;
+  StackRealAllocator *m_alloc;
   void free_variables() {
     if (m_alloc == nullptr)
       return;
-    m_alloc->~StackBlockAlloc();
+    m_alloc->~StackRealAllocator();
     if (m_alloc->alloc_num == 0)
       std::free(m_alloc);
   }
@@ -75,15 +75,17 @@ public:
   typedef const T *const_pointer;
   template <class U> struct rebind { typedef StackAllocator<U> other; };
   StackAllocator()
-      : m_alloc(new (std::malloc(sizeof(StackBlockAlloc))) StackBlockAlloc()) {}
+      : m_alloc(new (std::malloc(sizeof(StackRealAllocator)))
+                    StackRealAllocator()) {}
   template <typename U>
   StackAllocator(const StackAllocator<U> &other) : m_alloc(nullptr) {
     *this = other;
   }
+  StackRealAllocator *GetAlloc() const noexcept { return m_alloc; }
   template <typename U>
   StackAllocator &operator=(const StackAllocator<U> &other) {
     free_variables();
-    m_alloc = other.m_alloc;
+    m_alloc = other.GetAlloc();
     ++m_alloc->alloc_num;
     return *this;
   }

@@ -112,7 +112,7 @@ TEST_P(XorListTestGeneral, General) {
   ASSERT_TRUE(std::equal(mlist1.begin(), mlist1.end(), mlist2.begin()));
 }
 INSTANTIATE_TEST_CASE_P(INST_GENERAL, XorListTestGeneral,
-                        ::testing::Values(10000));
+                        ::testing::Values(100000));
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
