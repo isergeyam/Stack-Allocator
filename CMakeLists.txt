@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.4)
 project (XorList)
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -g -fsanitize=address")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -O0 -g -fsanitize=address")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 add_executable(TestAllocator src/StackAllocator.hpp src/TestAllocator.cpp)
 target_link_libraries(TestAllocator gtest pthread)
