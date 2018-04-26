@@ -1,3 +1,4 @@
+#include "MemoryManager.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
@@ -26,12 +27,12 @@ struct StackBlock {
       throw std::bad_alloc();
   }
 };
-struct StackRealAllocator {
+struct StackRealAllocator : public IMemoryManager {
   size_t alloc_num;
   char *head_;
   StackBlock *m_block;
   StackRealAllocator() : alloc_num(1), head_(nullptr), m_block(nullptr) {}
-  void *allocate(size_t num_) {
+  void *Alloc(size_t num_) override {
     if (m_block == nullptr) {
       m_block = new (std::malloc(sizeof(StackBlock))) StackBlock();
       head_ = m_block->memory_;
@@ -46,6 +47,7 @@ struct StackRealAllocator {
     head_ += num_;
     return static_cast<void *>(ans);
   }
+  void Free(void *ptr) override { (void)ptr; }
   ~StackRealAllocator() {
     --alloc_num;
     if (alloc_num == 0) {
@@ -91,7 +93,7 @@ public:
   }
   pointer allocate(size_t num_) {
     num_ = sizeof(T) * num_;
-    return static_cast<T *>(m_alloc->allocate(
+    return static_cast<T *>(m_alloc->Alloc(
         num_ + num_ % std::max(alignof(T), alignof(std::max_align_t))));
   }
   void construct(pointer p, const_reference val) noexcept {
