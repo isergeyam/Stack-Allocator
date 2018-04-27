@@ -29,6 +29,7 @@ private:
         throw std::bad_alloc();
     }
   };
+ public:
   struct StackRealAllocator {
     size_t alloc_num;
     char *head_;
@@ -67,6 +68,7 @@ private:
       }
     }
   };
+ private:
   StackRealAllocator *m_alloc;
   void free_variables() {
     if (m_alloc == nullptr)
@@ -87,7 +89,7 @@ public:
       : m_alloc(new (std::malloc(sizeof(StackRealAllocator)))
                     StackRealAllocator()) {}
   template <typename U>
-  StackAllocator(const StackAllocator<U> &other) : m_alloc(nullptr) {
+  explicit StackAllocator(const StackAllocator<U> &other) : m_alloc(nullptr) {
     *this = other;
   }
   StackRealAllocator *GetAlloc() const noexcept { return m_alloc; }
@@ -105,11 +107,9 @@ public:
   }
   void construct(pointer p, const_reference val) noexcept {
     p = new ((void *)p) T(val);
-    return;
   }
   void destroy(pointer p) noexcept {
     p->~T();
-    return;
   }
   void deallocate(T *, size_t) noexcept {}
   ~StackAllocator() { free_variables(); }
