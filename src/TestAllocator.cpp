@@ -8,7 +8,7 @@
 #include <list>
 #include <random>
 #include <vector>
-template <typename _List>
+template<typename _List>
 _List process_operations(size_t n1, size_t n2, const std::vector<int> &mvec) {
   _List mlist;
   auto it = mvec.begin();
@@ -17,7 +17,7 @@ _List process_operations(size_t n1, size_t n2, const std::vector<int> &mvec) {
     ++it;
   }
   for (size_t i = 0; i < n2; ++i) {
-    bool del = *it % 2;
+    bool del = *it%2;
     ++it;
     if (del && !mlist.empty())
       mlist.pop_back();
@@ -28,12 +28,12 @@ _List process_operations(size_t n1, size_t n2, const std::vector<int> &mvec) {
   }
   return mlist;
 }
-template <template <class, class> class _Container>
+template<template<class, class> class _Container>
 void process_sample(size_t n1, size_t n2, const std::string &str) {
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<int> distr;
-  std::vector<int> mvec(n1 + 2 * n2);
+  std::vector<int> mvec(n1 + 2*n2);
   std::generate(mvec.begin(), mvec.end(),
                 [&distr, &gen]() { return distr(gen); });
   auto begin = std::chrono::steady_clock::now();

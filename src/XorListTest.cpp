@@ -35,7 +35,7 @@ TEST(XorListTest, PushBackandPopBack) {
     mlist.push_back(i);
     // print_list(mlist);
   }
-  for (auto it = mlist.begin(); it != mlist.end(); ++it) {
+  for (auto it = mlist.begin(); it!=mlist.end(); ++it) {
     static int i = 0;
     ASSERT_EQ(*it, i);
     ++i;
@@ -44,13 +44,13 @@ TEST(XorListTest, PushBackandPopBack) {
 TEST(XorListTest, PushFrontandPopFront) {
   XorList<int> mlist;
   for (int i = 0; i < 10; ++i) {
-    if (i % 2)
+    if (i%2)
       mlist.push_back(i);
     else
       mlist.push_front(i);
   }
   std::vector<int> test_vec{8, 6, 4, 2, 0, 1, 3, 5, 7, 9};
-  for (auto it = mlist.begin(); it != mlist.end(); ++it) {
+  for (auto it = mlist.begin(); it!=mlist.end(); ++it) {
     static int i = 0;
     ASSERT_EQ(test_vec[i], *it);
     ++i;
@@ -80,33 +80,33 @@ TEST_P(XorListTestGeneral, General) {
   enum OperationTp { PushBack, PushFront, PopBack, PopFront };
   for (int i = 0; i < GetParam(); ++i) {
     OperationTp op = static_cast<OperationTp>(op_distr(gen));
-    if (mlist2.empty() && (op == PopBack || op == PopFront)) {
+    if (mlist2.empty() && (op==PopBack || op==PopFront)) {
       --i;
       continue;
     }
     switch (op) {
-    case PushBack: {
-      int cur = num_distr(gen);
-      mlist1.push_back(cur);
-      mlist2.push_back(cur);
-      break;
-    }
-    case PushFront: {
-      int cur = num_distr(gen);
-      mlist1.push_front(cur);
-      mlist2.push_front(cur);
-      break;
-    }
-    case PopBack: {
-      mlist1.pop_back();
-      mlist2.pop_back();
-      break;
-    }
-    case PopFront: {
-      mlist1.pop_front();
-      mlist2.pop_front();
-      break;
-    }
+      case PushBack: {
+        int cur = num_distr(gen);
+        mlist1.push_back(cur);
+        mlist2.push_back(cur);
+        break;
+      }
+      case PushFront: {
+        int cur = num_distr(gen);
+        mlist1.push_front(cur);
+        mlist2.push_front(cur);
+        break;
+      }
+      case PopBack: {
+        mlist1.pop_back();
+        mlist2.pop_back();
+        break;
+      }
+      case PopFront: {
+        mlist1.pop_front();
+        mlist2.pop_front();
+        break;
+      }
     }
   }
   ASSERT_TRUE(std::equal(mlist1.begin(), mlist1.end(), mlist2.begin()));
