@@ -18,9 +18,12 @@ class StackBlock {
  public:
   ~StackBlock() {
     std::free(memory_);
-    if (prev_block!=nullptr)
-      prev_block->~StackBlock();
-    std::free(prev_block);
+    while(prev_block!=nullptr) {
+      auto prev_prev_block = prev_block->prev_block;
+      std::free(prev_block->memory_);
+      std::free(prev_block);
+      prev_block = prev_prev_block;
+    }
   }
   static constexpr size_t ALLOC_MEM_ = 100000;
   explicit StackBlock(size_t alloc_num = ALLOC_MEM_) : prev_block(nullptr) {
